@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPMP — Project Portfolio Management Platform</title>
+<style>
+  :root{
+    --ink:#1d1d1f; --gray:#6e6e73; --bg:#fff; --bg-alt:#f5f5f7;
+    --blue:#0071e3; --line:#d2d2d7; --dark:#000; --dark2:#101012;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  /* NAV */
+  nav{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    height:48px; padding:0 22px;
+    background:rgba(255,255,255,.72); backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(0,0,0,.08);
+  }
+  nav .brand{font-weight:600; letter-spacing:.5px; font-size:18px}
+  nav .links{display:flex; gap:28px}
+  nav a{color:var(--ink); text-decoration:none; font-size:13px; opacity:.85}
+  nav a:hover{opacity:1}
+  @media(max-width:640px){nav .links{display:none}}
+
+  section{padding:110px 22px; text-align:center}
+  .wrap{max-width:980px; margin:0 auto}
+  .eyebrow{color:var(--blue); font-weight:600; font-size:15px; letter-spacing:.3px; margin-bottom:10px}
+  h1{font-size:88px; font-weight:700; letter-spacing:-.02em; line-height:1.04}
+  h2{font-size:48px; font-weight:700; letter-spacing:-.015em; margin-bottom:16px}
+  h3{font-size:24px; font-weight:600; letter-spacing:-.01em}
+  .lead{font-size:22px; color:var(--gray); max-width:640px; margin:18px auto 0}
+  .small{font-size:15px; color:var(--gray)}
+
+  /* HERO */
+  .hero{height:100vh; min-height:620px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%,#fbfbfd 0%,#eef1f6 55%,#e7ebf2 100%);    background-image:linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),  url(bg1.png);
+    background-size: cover;
+    background-position: center;}
+  .hero .sub{font-size:26px; font-weight:500; color:var(--gray); margin-top:6px}
+  .hero .tag{font-size:21px; color:var(--ink); margin-top:34px; max-width:680px; font-weight:500}
+  .hero .org{margin-top:14px; font-size:14px; color:var(--gray); letter-spacing:.5px}
+  .scrollcue{position:absolute; bottom:30px; font-size:13px; color:var(--gray); animation:bob 2s infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+  /* CHALLENGE stats */
+  .stats{display:flex; gap:40px; justify-content:center; flex-wrap:wrap; margin-top:54px}
+  .stat .num{font-size:72px; font-weight:700; letter-spacing:-.03em; background:linear-gradient(90deg,#0071e3,#42a5f5); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .stat .cap{font-size:17px; color:var(--gray); max-width:260px; margin:6px auto 0}
+
+  /* dark section */
+  .dark{background:var(--dark); color:#f5f5f7}
+  .dark h2{color:#fff}
+  .dark .lead{color:#a1a1a6}
+
+  /* pain grid */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:54px; text-align:left}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:28px}
+  .dark .card{background:rgba(255,255,255,.05)}
+  .card .ico{width:34px; height:34px; color:var(--blue); margin-bottom:14px}
+  .card h3{font-size:19px; margin-bottom:6px}
+  .card p{font-size:15px; color:#a1a1a6}
+  .lightcard{background:var(--bg-alt); border:1px solid var(--line); border-radius:18px; padding:28px; text-align:left}
+  .lightcard .ico{color:var(--blue)}
+  .lightcard p{color:var(--gray)}
+
+  /* pillars */
+  .pillars{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:54px; text-align:left}
+  @media(max-width:760px){.pillars{grid-template-columns:1fr}}
+  .pillar{background:var(--bg-alt); border-radius:20px; padding:34px}
+  .pillar .step{font-size:14px; font-weight:700; color:var(--blue); letter-spacing:1px}
+  .pillar h3{font-size:22px; margin:8px 0 10px}
+  .pillar p{font-size:15px; color:var(--gray)}
+  .pillar .tools{margin-top:14px; font-size:13px; color:var(--ink); opacity:.7}
+
+  /* layers */
+  .layers{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:46px; text-align:left}
+  @media(max-width:760px){.layers{grid-template-columns:1fr}}
+  .layer{border-radius:20px; padding:30px; color:#fff}
+  .layer.public{background:linear-gradient(135deg,#0a84ff,#0060df)}
+  .layer.enter{background:linear-gradient(135deg,#1d1d1f,#3a3a3c)}
+  .layer.proj{background:linear-gradient(135deg,#30b0c7,#0a7ea4)}
+  .layer h3{font-size:22px; margin-bottom:8px}
+  .layer p{font-size:14px; opacity:.92}
+
+  .dims{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:40px}
+  .chip{background:var(--bg-alt); border:1px solid var(--line); border-radius:999px; padding:10px 22px; font-size:16px; font-weight:500}
+
+  /* roadmap */
+  .timeline{display:flex; justify-content:space-between; gap:14px; margin-top:54px; flex-wrap:wrap}
+  .phase{flex:1; min-width:200px; background:var(--bg-alt); border-radius:18px; padding:26px 22px; text-align:left; position:relative}
+  .phase .q{font-size:14px; font-weight:700; color:var(--blue)}
+  .phase h3{font-size:20px; margin:6px 0 8px}
+  .phase p{font-size:14px; color:var(--gray)}
+
+  /* closing */
+  .closing{background:var(--dark2); color:#fff; padding:140px 22px}
+  .closing h2{color:#fff; font-size:54px}
+  .closing .org{margin-top:22px; font-size:15px; color:#a1a1a6; letter-spacing:.5px}
+
+  footer{padding:30px 22px; text-align:center; font-size:12px; color:var(--gray); background:var(--bg-alt)}
+  footer a{color:var(--gray); text-decoration:none}
+
+  .reveal{opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .8s ease}
+  .reveal.in{opacity:1; transform:none}
+</style>
+</head>
+<body>
+
+<nav>
+<img src="header logo.png" style="
+    padding:5px;
+    width: 20%;
+">
+<!--   <div class="brand">PPMP - Project Portfolio Management Platform</div>
+ -->  <div class="links">
+    <a href="#challenge">挑戰</a>
+    <a href="#solution">方案</a>
+    <a href="#layers">架構</a>
+    <a href="#roadmap">藍圖</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="eyebrow">Collaboration | Project Management | Reseach & Intelligence </div>
+  <div style=" display: flex;
+  justify-content: center;
+  align-items: center;"><img src="logo.png" style="width: 30%;"></div>
+  <div class="sub">PPMP - Project Portfolio Management Platform</div>
+  <div class="tag">一個項目，多維度掌控。<br>Every project, one trusted source of truth.</div>
+  <div class="org">香港房屋協會 項目策劃及管理部 HKHS Projects Division　</div>
+  <div class="scrollcue">向下滑動 ↓</div>
+</header>
+
+<!-- CHALLENGE -->
+<section id="challenge" class="reveal">
+  <div class="wrap">
+    <div class="eyebrow">The Challenge</div>
+    <h2>項目管理，必須進化。</h2>
+    <p class="lead">當項目規模擴張、行業風險疊加，傳統管理方式難以為繼。</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="num">28</div>
+        <div class="cap">香港房屋協會<br>同步運作的建築項目</div>
+      </div>
+      <div class="stat">
+        <div class="num">∞</div>
+        <div class="cap">散落在 Email、WhatsApp、Excel、SSSS、Asite、Novade、Openspace 的數據</div>
+      </div>
+    </div>
+    <p class="small" style="margin-top:40px">數以千計的呈交、文件與報告，溝通碎片化 —— 這是一套「非結構化」的項目組合管理。</p>
+  </div>
+</section>
+
+<!-- PAIN POINTS (dark) -->
+<section class="dark reveal" style="background-image: url(bg3.png);
+    background-size: 30%;
+    background-repeat: no-repeat;
+    background-origin: content-box;
+    background-position-x: right;">
+  <div class="wrap">
+    <div class="eyebrow" style="color:#0a84ff">Pain Points</div>
+    <h2>痛點，無處不在。</h2>
+    <p class="lead">從時延到安全，每一個缺口都在吞噬效率與信心。</p>
+    <div class="grid">
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <h3>時間滯後</h3><p>資訊傳遞慢，決策總是慢半拍。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16M4 12h10M4 19h7"/></svg>
+        <h3>溝通碎片化</h3><p>多個頻道各自為政，難以追蹤。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 7-8"/><path d="M14 7h7v7"/></svg>
+        <h3>預算超支</h3><p>現金流壓力與合約文件量雙重夾擊。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <h3>主動安全</h3><p>2026 年建造業 26 宗致命工傷，必須前置預防。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+        <h3>缺陷與驗收</h3><p>質量表現難以量化，整改被動。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>
+        <h3>碳排放可視性</h3><p>可持續表現缺乏透明度的衡量。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution" class="reveal">
+  <div class="wrap">
+    <div class="eyebrow">Our Solution</div>
+    <h2>三支柱，重塑管理。</h2>
+    <p class="lead">PPMP 把孤立數據匯聚成單一可信源。</p>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="step">01</div>
+        <h3>安全 API 互聯</h3>
+        <p>透過安全 API 整合既有系統，讓數據自在流動。</p>
+        <div class="tools">ASITE · NOVADE · OPENSPACE · CUPIX</div>
+      </div>
+      <div class="pillar">
+        <div class="step">02</div>
+        <h3>協作流程 · 單次錄入</h3>
+        <p>跨團隊協作工作流，資料只需錄入一次。</p>
+        <div class="tools">PPMP Data Management Portal</div>
+      </div>
+      <div class="pillar">
+        <div class="step">03</div>
+        <h3>單一可信數據源</h3>
+        <p>每個項目，都有一個可被信任的真相來源。</p>
+        <div class="tools">Project Level · Public Level</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LAYERS & DIMENSIONS -->
+<section id="layers" class="reveal" style="background:var(--bg-alt);background-image: url(bg2.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-origin: content-box;
+    background-position-x: left;">
+  <div class="wrap">
+    <div class="eyebrow">Design — Layers &amp; Dimensions</div>
+    <h2>三層架構，六維掌控。</h2>
+    <p class="lead">由公眾層到企業層，貫穿每一個維度。</p>
+    <div class="layers">
+      <div class="layer public">
+        <h3>Public Layer</h3>
+        <p>項目 KPI 與組合概覽，對外公開的非敏感數據。</p>
+      </div>
+      <div class="layer enter">
+        <h3>Enterprise Layer</h3>
+        <p>安全、質量、進度、可持續、合約成本與監控；跨項目比較與基準對標。</p>
+      </div>
+      <div class="layer proj">
+        <h3>Project Layer</h3>
+        <p>項目級日常記錄與監控管理，落到現場每一天。</p>
+      </div>
+    </div>
+    <div class="dims">
+      <span class="chip">Safety 安全</span>
+      <span class="chip">Progress 進度</span>
+      <span class="chip">Sustainability 可持續</span>
+      <span class="chip">Cost 成本</span>
+      <span class="chip">Quality 質量</span>
+      <span class="chip">Surveillance 監控</span>
+    </div>
+  </div>
+</section>
+
+<!-- DATA-DRIVEN (dark) -->
+<section class="dark reveal">
+  <div class="wrap">
+    <div class="eyebrow" style="color:#0a84ff">Redefining Management</div>
+    <h2>用數據，做決策。</h2>
+    <p class="lead">從全維度數據量化項目表現，讓健康度一目了然。</p>
+    <div class="grid">
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 20V10M9 20V4M15 20v-7M21 20v-12"/></svg>
+        <h3>績效比較</h3><p>跨項目、承建商與市場基準對標。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <h3>項目健康度</h3><p>風險早警，主動約談承建商、加密巡查。</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <h3>數據驅動 標準作業</h3><p>把經驗沉澱為Standard Operation Procedures - SOP，決策有據。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" class="reveal" style="background-image: url(bg4.png);
+    background-size: 30%;
+    background-repeat: no-repeat;
+    background-origin: content-box;
+    background-position-x: right;">
+  <div class="wrap">
+    <div class="eyebrow">Scalability &amp; Future</div>
+    <h2>從HKHS開始 改變業界。</h2>
+    <p class="lead">一路演進的產品藍圖。</p>
+    <div class="timeline">
+      <div class="phase">
+        <div class="q">Q1 2026</div>
+        <h3>PPMP 啟動</h3>
+        <p>平台正式上線，統一項目組合管理。</p>
+      </div>
+      <div class="phase">
+        <div class="q">Q1 2027</div>
+        <h3>PPMP 2.0</h3>
+        <p>引入機械人與設施管理（Robotic + FM）。</p>
+      </div>
+      <div class="phase">
+        <div class="q">Q3 2027</div>
+        <h3>iCWP / SmartEye</h3>
+        <p>整合智能監控與視覺辨識能力。</p>
+      </div>
+      <div class="phase">
+        <div class="q">Q1 2028</div>
+        <h3>AI Assistant</h3>
+        <p>人工智能助手，讓管理更聰明。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+
+<section class="closing reveal" style="    background: var(--dark2);background-image: url(bg5.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+    background-position-x: left;
+	background-position-y:center">
+  <div class="wrap">
+    <h2>&nbsp;</h2><h2>&nbsp;</h2>
+    <div class="org">&nbsp;</div>
+    <div class="org">&nbsp;</div>
+  </div>
+</section>
+
+
+
+
+<footer>
+  PPMP — Project Portfolio Management Platform　·　© 2026 HKHS Projects Division
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
