@@ -1,0 +1,651 @@
+<html lang="zh-Hans"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPMP · 項目健康度與風險管理</title>
+<style>
+  :root{
+    --ink:#1d1d1f; --gray:#6e6e73; --bg:#fff; --bg-alt:#f5f5f7;
+    --line:#d2d2d7;
+    --red:#ff3b30; --yellow:#e8a800; --green:#34c759;
+    --red-bg:rgba(255,59,48,.10); --yellow-bg:rgba(232,168,0,.14); --green-bg:rgba(52,199,89,.12);
+    --blue:#0071e3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased}
+  nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+    height:52px;padding:0 22px;background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(0,0,0,.08)}
+  nav .brand{font-weight:600;letter-spacing:.4px}
+  nav .brand b{color:var(--blue)}
+  nav .legend{display:flex;gap:16px;font-size:12px;color:var(--gray)}
+  nav .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.r{background:var(--red)} .dot.y{background:var(--yellow)} .dot.g{background:var(--green)}
+  @media(max-width:680px){nav .legend{display:none}}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  section.block{padding:46px 0}
+
+  /* summary */
+  .summary{padding:54px 22px 10px;text-align:center}
+  .summary .eyebrow{color:var(--blue);font-weight:600;font-size:14px;letter-spacing:.4px}
+  .summary h1{font-size:42px;font-weight:700;letter-spacing:-.02em;margin:6px 0 4px}
+  .summary .sub{color:var(--gray);font-size:17px}
+  .kpis{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .kpi{background:var(--bg-alt);border-radius:18px;padding:20px 28px;min-width:140px}
+  .kpi .n{font-size:42px;font-weight:700;letter-spacing:-.02em}
+  .kpi .l{font-size:14px;color:var(--gray);margin-top:2px}
+  .kpi.red .n{color:var(--red)} .kpi.yellow .n{color:var(--yellow)} .kpi.green .n{color:var(--green)}
+  .kpi.total .n{color:var(--ink)}
+
+  /* trend section */
+  .panel{background:var(--bg-alt);border-radius:22px;padding:26px 26px 18px;margin-top:14px}
+  .panel h3{font-size:19px;font-weight:700;margin-bottom:4px}
+  .panel .psub{font-size:14px;color:var(--gray);margin-bottom:14px}
+  .chartbox{position:relative;width:100%}
+  .legend-row{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:13px;color:var(--gray)}
+  .legend-row span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:14px;height:4px;border-radius:2px;display:inline-block}
+  .dist-row{display:flex;gap:24px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .dist-bar{display:flex;height:18px;border-radius:999px;overflow:hidden;min-width:280px;flex:1}
+  .dist-bar i{display:block;height:100%}
+  .dist-meta{font-size:13px;color:var(--gray);display:flex;gap:18px;flex-wrap:wrap}
+  .dist-meta b{color:var(--ink)}
+
+  /* filter */
+  .filter{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:34px 0 8px}
+  .filter button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 18px;font-size:14px;cursor:pointer;color:var(--ink);transition:.2s}
+  .filter button:hover{border-color:var(--blue);color:var(--blue)}
+  .filter button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:24px 0 20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;cursor:pointer;transition:.18s;position:relative}
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.10);border-color:#c0c0c7}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .card .code{font-weight:700;font-size:17px}
+  .card .dist{font-size:12px;color:var(--gray);margin-top:2px}
+  .card .score{font-size:34px;font-weight:700;letter-spacing:-.02em}
+  .card .health-pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-top:2px}
+  .pill-r{background:var(--red-bg);color:var(--red)} .pill-y{background:var(--yellow-bg);color:var(--yellow)} .pill-g{background:var(--green-bg);color:var(--green)}
+  .dims{display:flex;gap:7px;margin-top:16px}
+  .dims .d{flex:1;text-align:center;font-size:11px;font-weight:600;padding:7px 0;border-radius:10px;color:#fff}
+  .dims .d small{display:block;font-weight:500;opacity:.85;font-size:10px;margin-top:1px}
+  .d.r{background:var(--red)} .d.y{background:var(--yellow)} .d.g{background:var(--green)}
+  .crisis{margin-top:14px;font-size:12px;font-weight:600;color:var(--red);background:var(--red-bg);border-radius:10px;padding:7px 10px}
+  .crisis::before{content:"⚠ ";}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:200;padding:40px 16px;overflow:auto}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:24px;max-width:700px;width:100%;padding:30px 32px 34px;box-shadow:0 30px 80px rgba(0,0,0,.3);animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+  .modal .mhead{display:flex;justify-content:space-between;align-items:flex-start}
+  .modal h2{font-size:26px;font-weight:700}
+  .modal .mdist{font-size:13px;color:var(--gray);margin-top:3px}
+  .modal .close{background:none;border:none;font-size:26px;cursor:pointer;color:var(--gray);line-height:1}
+  .modal .mhealth{display:flex;align-items:center;gap:12px;margin:18px 0 6px}
+  .modal .mhealth .big{font-size:40px;font-weight:700}
+  .mdim{margin-top:22px}
+  .mdim .row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .mdim .name{width:120px;font-size:14px;font-weight:600}
+  .mdim .track{flex:1;height:10px;border-radius:999px;background:var(--bg-alt);overflow:hidden}
+  .mdim .track i{display:block;height:100%}
+  .mdim .val{width:42px;text-align:right;font-weight:700;font-size:14px}
+  .note{font-size:13px;padding:9px 12px;border-radius:10px;margin:4px 0 0;line-height:1.45}
+  .note.risk{background:var(--red-bg);color:#b22;}
+  .note.tip{background:var(--green-bg);color:#1d6b3a}
+  .sech{font-size:13px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin:24px 0 8px}
+  .tips li{font-size:14px;margin:8px 0 8px 18px;line-height:1.5}
+
+  /* chart tooltip */
+  #tip{position:fixed;pointer-events:none;background:rgba(28,28,30,.94);color:#fff;font-size:12px;
+    padding:7px 10px;border-radius:9px;display:none;z-index:500;line-height:1.4;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  #tip b{color:#fff}
+  .pt{cursor:pointer;transition:r .1s}
+  .pt:hover{r:5.5}
+
+  footer{text-align:center;font-size:12px;color:var(--gray);padding:26px 22px;background:var(--bg-alt)}
+</style>
+</head>
+<body>
+
+<!-- <nav>
+  <div class="brand">PPMP · <b>健康度 &amp; 風險</b></div>
+  <div class="legend">
+    <span><i class="dot g"></i>綠 健康</span>
+    <span><i class="dot y"></i>黃 關注</span>
+    <span><i class="dot r"></i>紅 危機</span>
+  </div>
+</nav> -->
+
+<!-- SUMMARY -->
+<section class="summary">
+  <div class="eyebrow">PROJECT PORTFOLIO HEALTH &amp; RISK</div>
+  <h1>項目組合健康度總覽</h1>
+  <div class="sub">28 個香港房屋協會（HKHS）活躍項目 · 五維度實時監控</div>
+  <div class="kpis" id="kpis">
+    <div class="kpi total"><div class="n">28</div><div class="l">項目總數</div></div>
+    <div class="kpi green"><div class="n">2</div><div class="l">健康 (綠)</div></div>
+    <div class="kpi yellow"><div class="n">18</div><div class="l">關注 (黃)</div></div>
+    <div class="kpi red"><div class="n">8</div><div class="l">危機 (紅)</div></div>
+    <div class="kpi total"><div class="n">60</div><div class="l">平均健康度</div></div></div>
+</section>
+
+<!-- TREND -->
+<section class="block wrap">
+  <div class="panel">
+    <h3>項目組合表現走勢</h3>
+    <div class="psub">近 12 個月 · 五維度平均得分（0–100）走勢分析</div>
+    <div class="chartbox" id="portTrend"><svg viewBox="0 0 780 320" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"><line x1="44" y1="284" x2="762" y2="284" stroke="#e3e3e8" stroke-width="1"></line><text x="36" y="288" text-anchor="end" font-size="11" fill="#8a8a8e">0</text><line x1="44" y1="217.5" x2="762" y2="217.5" stroke="#e3e3e8" stroke-width="1"></line><text x="36" y="221.5" text-anchor="end" font-size="11" fill="#8a8a8e">25</text><line x1="44" y1="151" x2="762" y2="151" stroke="#e3e3e8" stroke-width="1"></line><text x="36" y="155" text-anchor="end" font-size="11" fill="#8a8a8e">50</text><line x1="44" y1="84.5" x2="762" y2="84.5" stroke="#e3e3e8" stroke-width="1"></line><text x="36" y="88.5" text-anchor="end" font-size="11" fill="#8a8a8e">75</text><line x1="44" y1="18" x2="762" y2="18" stroke="#e3e3e8" stroke-width="1"></line><text x="36" y="22" text-anchor="end" font-size="11" fill="#8a8a8e">100</text><text x="44" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">9月</text><text x="174.54545454545456" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">11月</text><text x="305.0909090909091" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">1月</text><text x="435.6363636363636" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">3月</text><text x="566.1818181818182" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">5月</text><text x="696.7272727272727" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">7月</text><text x="762" y="302" text-anchor="middle" font-size="11" fill="#8a8a8e">8月</text><polyline points="44,135.04 109.27272727272728,132.38 174.54545454545456,132.38 239.8181818181818,135.04 305.0909090909091,135.04 370.3636363636364,135.04 435.6363636363636,137.7 500.9090909090909,135.04 566.1818181818182,135.04 631.4545454545455,132.38 696.7272727272727,135.04 762,135.04" fill="none" stroke="#ff453a" stroke-width="2" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="9月" data-val="56"></circle><circle class="pt" cx="109.27272727272728" cy="132.38" r="3.2" fill="#ff453a" data-series="安全" data-month="10月" data-val="57"></circle><circle class="pt" cx="174.54545454545456" cy="132.38" r="3.2" fill="#ff453a" data-series="安全" data-month="11月" data-val="57"></circle><circle class="pt" cx="239.8181818181818" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="12月" data-val="56"></circle><circle class="pt" cx="305.0909090909091" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="1月" data-val="56"></circle><circle class="pt" cx="370.3636363636364" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="2月" data-val="56"></circle><circle class="pt" cx="435.6363636363636" cy="137.7" r="3.2" fill="#ff453a" data-series="安全" data-month="3月" data-val="55"></circle><circle class="pt" cx="500.9090909090909" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="4月" data-val="56"></circle><circle class="pt" cx="566.1818181818182" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="5月" data-val="56"></circle><circle class="pt" cx="631.4545454545455" cy="132.38" r="3.2" fill="#ff453a" data-series="安全" data-month="6月" data-val="57"></circle><circle class="pt" cx="696.7272727272727" cy="135.04" r="3.2" fill="#ff453a" data-series="安全" data-month="7月" data-val="56"></circle><circle class="pt" cx="762" cy="135.04" r="4.5" fill="#ff453a" data-series="安全" data-month="8月" data-val="56"></circle><polyline points="44,116.42 109.27272727272728,113.75999999999999 174.54545454545456,116.42 239.8181818181818,116.42 305.0909090909091,119.08 370.3636363636364,119.08 435.6363636363636,119.08 500.9090909090909,119.08 566.1818181818182,119.08 631.4545454545455,116.42 696.7272727272727,119.08 762,119.08" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="116.42" r="3.2" fill="#0a84ff" data-series="進度" data-month="9月" data-val="63"></circle><circle class="pt" cx="109.27272727272728" cy="113.75999999999999" r="3.2" fill="#0a84ff" data-series="進度" data-month="10月" data-val="64"></circle><circle class="pt" cx="174.54545454545456" cy="116.42" r="3.2" fill="#0a84ff" data-series="進度" data-month="11月" data-val="63"></circle><circle class="pt" cx="239.8181818181818" cy="116.42" r="3.2" fill="#0a84ff" data-series="進度" data-month="12月" data-val="63"></circle><circle class="pt" cx="305.0909090909091" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="1月" data-val="62"></circle><circle class="pt" cx="370.3636363636364" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="2月" data-val="62"></circle><circle class="pt" cx="435.6363636363636" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="3月" data-val="62"></circle><circle class="pt" cx="500.9090909090909" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="4月" data-val="62"></circle><circle class="pt" cx="566.1818181818182" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="5月" data-val="62"></circle><circle class="pt" cx="631.4545454545455" cy="116.42" r="3.2" fill="#0a84ff" data-series="進度" data-month="6月" data-val="63"></circle><circle class="pt" cx="696.7272727272727" cy="119.08" r="3.2" fill="#0a84ff" data-series="進度" data-month="7月" data-val="62"></circle><circle class="pt" cx="762" cy="119.08" r="4.5" fill="#0a84ff" data-series="進度" data-month="8月" data-val="62"></circle><polyline points="44,121.74000000000001 109.27272727272728,121.74000000000001 174.54545454545456,121.74000000000001 239.8181818181818,121.74000000000001 305.0909090909091,121.74000000000001 370.3636363636364,124.4 435.6363636363636,124.4 500.9090909090909,124.4 566.1818181818182,124.4 631.4545454545455,124.4 696.7272727272727,127.06 762,127.06" fill="none" stroke="#30d158" stroke-width="2" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="121.74000000000001" r="3.2" fill="#30d158" data-series="可持續" data-month="9月" data-val="61"></circle><circle class="pt" cx="109.27272727272728" cy="121.74000000000001" r="3.2" fill="#30d158" data-series="可持續" data-month="10月" data-val="61"></circle><circle class="pt" cx="174.54545454545456" cy="121.74000000000001" r="3.2" fill="#30d158" data-series="可持續" data-month="11月" data-val="61"></circle><circle class="pt" cx="239.8181818181818" cy="121.74000000000001" r="3.2" fill="#30d158" data-series="可持續" data-month="12月" data-val="61"></circle><circle class="pt" cx="305.0909090909091" cy="121.74000000000001" r="3.2" fill="#30d158" data-series="可持續" data-month="1月" data-val="61"></circle><circle class="pt" cx="370.3636363636364" cy="124.4" r="3.2" fill="#30d158" data-series="可持續" data-month="2月" data-val="60"></circle><circle class="pt" cx="435.6363636363636" cy="124.4" r="3.2" fill="#30d158" data-series="可持續" data-month="3月" data-val="60"></circle><circle class="pt" cx="500.9090909090909" cy="124.4" r="3.2" fill="#30d158" data-series="可持續" data-month="4月" data-val="60"></circle><circle class="pt" cx="566.1818181818182" cy="124.4" r="3.2" fill="#30d158" data-series="可持續" data-month="5月" data-val="60"></circle><circle class="pt" cx="631.4545454545455" cy="124.4" r="3.2" fill="#30d158" data-series="可持續" data-month="6月" data-val="60"></circle><circle class="pt" cx="696.7272727272727" cy="127.06" r="3.2" fill="#30d158" data-series="可持續" data-month="7月" data-val="59"></circle><circle class="pt" cx="762" cy="127.06" r="4.5" fill="#30d158" data-series="可持續" data-month="8月" data-val="59"></circle><polyline points="44,124.4 109.27272727272728,127.06 174.54545454545456,124.4 239.8181818181818,124.4 305.0909090909091,124.4 370.3636363636364,124.4 435.6363636363636,124.4 500.9090909090909,121.74000000000001 566.1818181818182,121.74000000000001 631.4545454545455,121.74000000000001 696.7272727272727,121.74000000000001 762,121.74000000000001" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="9月" data-val="60"></circle><circle class="pt" cx="109.27272727272728" cy="127.06" r="3.2" fill="#ff9f0a" data-series="成本" data-month="10月" data-val="59"></circle><circle class="pt" cx="174.54545454545456" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="11月" data-val="60"></circle><circle class="pt" cx="239.8181818181818" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="12月" data-val="60"></circle><circle class="pt" cx="305.0909090909091" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="1月" data-val="60"></circle><circle class="pt" cx="370.3636363636364" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="2月" data-val="60"></circle><circle class="pt" cx="435.6363636363636" cy="124.4" r="3.2" fill="#ff9f0a" data-series="成本" data-month="3月" data-val="60"></circle><circle class="pt" cx="500.9090909090909" cy="121.74000000000001" r="3.2" fill="#ff9f0a" data-series="成本" data-month="4月" data-val="61"></circle><circle class="pt" cx="566.1818181818182" cy="121.74000000000001" r="3.2" fill="#ff9f0a" data-series="成本" data-month="5月" data-val="61"></circle><circle class="pt" cx="631.4545454545455" cy="121.74000000000001" r="3.2" fill="#ff9f0a" data-series="成本" data-month="6月" data-val="61"></circle><circle class="pt" cx="696.7272727272727" cy="121.74000000000001" r="3.2" fill="#ff9f0a" data-series="成本" data-month="7月" data-val="61"></circle><circle class="pt" cx="762" cy="121.74000000000001" r="4.5" fill="#ff9f0a" data-series="成本" data-month="8月" data-val="61"></circle><polyline points="44,124.4 109.27272727272728,127.06 174.54545454545456,124.4 239.8181818181818,127.06 305.0909090909091,124.4 370.3636363636364,127.06 435.6363636363636,127.06 500.9090909090909,127.06 566.1818181818182,124.4 631.4545454545455,127.06 696.7272727272727,127.06 762,127.06" fill="none" stroke="#bf5af2" stroke-width="2" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="124.4" r="3.2" fill="#bf5af2" data-series="質量" data-month="9月" data-val="60"></circle><circle class="pt" cx="109.27272727272728" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="10月" data-val="59"></circle><circle class="pt" cx="174.54545454545456" cy="124.4" r="3.2" fill="#bf5af2" data-series="質量" data-month="11月" data-val="60"></circle><circle class="pt" cx="239.8181818181818" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="12月" data-val="59"></circle><circle class="pt" cx="305.0909090909091" cy="124.4" r="3.2" fill="#bf5af2" data-series="質量" data-month="1月" data-val="60"></circle><circle class="pt" cx="370.3636363636364" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="2月" data-val="59"></circle><circle class="pt" cx="435.6363636363636" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="3月" data-val="59"></circle><circle class="pt" cx="500.9090909090909" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="4月" data-val="59"></circle><circle class="pt" cx="566.1818181818182" cy="124.4" r="3.2" fill="#bf5af2" data-series="質量" data-month="5月" data-val="60"></circle><circle class="pt" cx="631.4545454545455" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="6月" data-val="59"></circle><circle class="pt" cx="696.7272727272727" cy="127.06" r="3.2" fill="#bf5af2" data-series="質量" data-month="7月" data-val="59"></circle><circle class="pt" cx="762" cy="127.06" r="4.5" fill="#bf5af2" data-series="質量" data-month="8月" data-val="59"></circle><polyline points="44,124.4 109.27272727272728,124.4 174.54545454545456,124.4 239.8181818181818,124.4 305.0909090909091,124.4 370.3636363636364,127.06 435.6363636363636,127.06 500.9090909090909,124.4 566.1818181818182,124.4 631.4545454545455,124.4 696.7272727272727,124.4 762,124.4" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"></polyline><circle class="pt" cx="44" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="9月" data-val="60"></circle><circle class="pt" cx="109.27272727272728" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="10月" data-val="60"></circle><circle class="pt" cx="174.54545454545456" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="11月" data-val="60"></circle><circle class="pt" cx="239.8181818181818" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="12月" data-val="60"></circle><circle class="pt" cx="305.0909090909091" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="1月" data-val="60"></circle><circle class="pt" cx="370.3636363636364" cy="127.06" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="2月" data-val="59"></circle><circle class="pt" cx="435.6363636363636" cy="127.06" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="3月" data-val="59"></circle><circle class="pt" cx="500.9090909090909" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="4月" data-val="60"></circle><circle class="pt" cx="566.1818181818182" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="5月" data-val="60"></circle><circle class="pt" cx="631.4545454545455" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="6月" data-val="60"></circle><circle class="pt" cx="696.7272727272727" cy="124.4" r="3.2" fill="#1d1d1f" data-series="整體平均" data-month="7月" data-val="60"></circle><circle class="pt" cx="762" cy="124.4" r="4.5" fill="#1d1d1f" data-series="整體平均" data-month="8月" data-val="60"></circle></svg></div>
+    <div class="legend-row" id="portLegend"><span><i class="swatch" style="background:#ff453a"></i>安全</span><span><i class="swatch" style="background:#0a84ff"></i>進度</span><span><i class="swatch" style="background:#30d158"></i>可持續</span><span><i class="swatch" style="background:#ff9f0a"></i>成本</span><span><i class="swatch" style="background:#bf5af2"></i>質量</span><span><i class="swatch" style="background:#1d1d1f"></i>整體平均</span></div>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <h3>各維度當前狀態分佈</h3>
+    <div class="psub">全組合 140 個維度讀數（28 項目 × 5 維度）的紅黃綠分佈</div>
+    <div class="dist-row">
+      <div class="dist-bar" id="distBar"><i style="width:32.857142857142854%;background:var(--green)"></i><i style="width:23.57142857142857%;background:var(--yellow)"></i><i style="width:43.57142857142857%;background:var(--red)"></i></div>
+      <div class="dist-meta" id="distMeta"><span><i class="dot g"></i><b>46</b> 綠 (健康)</span><span><i class="dot y"></i><b>33</b> 黃 (關注)</span><span><i class="dot r"></i><b>61</b> 紅 (危機)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FILTER -->
+<div class="filter" id="filter">
+  <button data-f="all" class="active">全部 28</button>
+  <button data-f="red">危機 (紅)</button>
+  <button data-f="yellow">關注 (黃)</button>
+  <button data-f="green">健康 (綠)</button>
+</div>
+
+<!-- GRID -->
+<div class="wrap"><div class="grid" id="grid"><div class="card">
+      <div class="top">
+        <div><div class="code">P01 · Kwun Tong</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">57</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>89</small></div><div class="d r">進度<small>42</small></div><div class="d r">可持續<small>37</small></div><div class="d y">成本<small>68</small></div><div class="d r">質量<small>50</small></div></div>
+      <div class="crisis">危機維度：進度、可持續、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P02 · Tuen Mun</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">65</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>46</small></div><div class="d g">進度<small>87</small></div><div class="d y">可持續<small>64</small></div><div class="d g">成本<small>91</small></div><div class="d r">質量<small>36</small></div></div>
+      <div class="crisis">危機維度：安全、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P03 · Sha Tin</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">66</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>67</small></div><div class="d g">進度<small>84</small></div><div class="d y">可持續<small>59</small></div><div class="d g">成本<small>74</small></div><div class="d r">質量<small>45</small></div></div>
+      <div class="crisis">危機維度：質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P04 · Kowloon City</div><div class="dist">長者房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">58</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>65</small></div><div class="d y">進度<small>63</small></div><div class="d g">可持續<small>73</small></div><div class="d r">成本<small>33</small></div><div class="d r">質量<small>54</small></div></div>
+      <div class="crisis">危機維度：成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P05 · Yuen Long</div><div class="dist">公共房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">50</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>35</small></div><div class="d r">進度<small>46</small></div><div class="d r">可持續<small>45</small></div><div class="d g">成本<small>75</small></div><div class="d r">質量<small>49</small></div></div>
+      <div class="crisis">危機維度：安全、進度、可持續、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P06 · Tai Po</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">59</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>72</small></div><div class="d g">進度<small>76</small></div><div class="d y">可持續<small>61</small></div><div class="d r">成本<small>30</small></div><div class="d y">質量<small>58</small></div></div>
+      <div class="crisis">危機維度：成本</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P07 · Kwai Chung</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">56</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>35</small></div><div class="d r">進度<small>31</small></div><div class="d r">可持續<small>35</small></div><div class="d g">成本<small>87</small></div><div class="d g">質量<small>90</small></div></div>
+      <div class="crisis">危機維度：安全、進度、可持續</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P08 · North Point</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">56</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>69</small></div><div class="d g">進度<small>91</small></div><div class="d r">可持續<small>39</small></div><div class="d r">成本<small>42</small></div><div class="d r">質量<small>38</small></div></div>
+      <div class="crisis">危機維度：可持續、成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P09 · Cheung Sha Wan</div><div class="dist">長者房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">67</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>21</small></div><div class="d g">進度<small>74</small></div><div class="d g">可持續<small>79</small></div><div class="d g">成本<small>76</small></div><div class="d g">質量<small>84</small></div></div>
+      <div class="crisis">危機維度：安全</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P10 · Tseung Kwan O</div><div class="dist">公共房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">51</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>34</small></div><div class="d r">進度<small>46</small></div><div class="d y">可持續<small>56</small></div><div class="d y">成本<small>67</small></div><div class="d r">質量<small>54</small></div></div>
+      <div class="crisis">危機維度：安全、進度、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P11 · Sai Ying Pun</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">48</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>77</small></div><div class="d r">進度<small>45</small></div><div class="d y">可持續<small>59</small></div><div class="d r">成本<small>21</small></div><div class="d r">質量<small>38</small></div></div>
+      <div class="crisis">危機維度：進度、成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P12 · Tsuen Wan</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">65</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>68</small></div><div class="d g">進度<small>86</small></div><div class="d y">可持續<small>57</small></div><div class="d r">成本<small>39</small></div><div class="d g">質量<small>76</small></div></div>
+      <div class="crisis">危機維度：成本</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P13 · Kwun Tong</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">48</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>37</small></div><div class="d r">進度<small>52</small></div><div class="d r">可持續<small>35</small></div><div class="d y">成本<small>56</small></div><div class="d y">質量<small>59</small></div></div>
+      <div class="crisis">危機維度：安全、進度、可持續</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P14 · Tuen Mun</div><div class="dist">長者房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">57</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>50</small></div><div class="d r">進度<small>38</small></div><div class="d g">可持續<small>75</small></div><div class="d g">成本<small>81</small></div><div class="d r">質量<small>41</small></div></div>
+      <div class="crisis">危機維度：安全、進度、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P15 · Sha Tin</div><div class="dist">公共房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--green)">77</div>
+          <span class="health-pill pill-g">健康</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>76</small></div><div class="d y">進度<small>70</small></div><div class="d g">可持續<small>88</small></div><div class="d g">成本<small>91</small></div><div class="d y">質量<small>58</small></div></div>
+      </div><div class="card">
+      <div class="top">
+        <div><div class="code">P16 · Kowloon City</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--green)">72</div>
+          <span class="health-pill pill-g">健康</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>73</small></div><div class="d g">進度<small>85</small></div><div class="d y">可持續<small>63</small></div><div class="d y">成本<small>66</small></div><div class="d y">質量<small>71</small></div></div>
+      </div><div class="card">
+      <div class="top">
+        <div><div class="code">P17 · Yuen Long</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">61</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>43</small></div><div class="d r">進度<small>49</small></div><div class="d g">可持續<small>91</small></div><div class="d g">成本<small>86</small></div><div class="d r">質量<small>36</small></div></div>
+      <div class="crisis">危機維度：安全、進度、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P18 · Tai Po</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">51</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>30</small></div><div class="d r">進度<small>41</small></div><div class="d g">可持續<small>90</small></div><div class="d r">成本<small>49</small></div><div class="d r">質量<small>47</small></div></div>
+      <div class="crisis">危機維度：安全、進度、成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P19 · Kwai Chung</div><div class="dist">長者房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">68</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>68</small></div><div class="d g">進度<small>84</small></div><div class="d r">可持續<small>51</small></div><div class="d g">成本<small>89</small></div><div class="d r">質量<small>46</small></div></div>
+      <div class="crisis">危機維度：可持續、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P20 · North Point</div><div class="dist">公共房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">69</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>92</small></div><div class="d g">進度<small>90</small></div><div class="d g">可持續<small>73</small></div><div class="d r">成本<small>36</small></div><div class="d r">質量<small>53</small></div></div>
+      <div class="crisis">危機維度：成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P21 · Cheung Sha Wan</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">49</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>33</small></div><div class="d r">進度<small>36</small></div><div class="d r">可持續<small>43</small></div><div class="d r">成本<small>54</small></div><div class="d g">質量<small>79</small></div></div>
+      <div class="crisis">危機維度：安全、進度、可持續、成本</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P22 · Tseung Kwan O</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">54</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>80</small></div><div class="d y">進度<small>68</small></div><div class="d r">可持續<small>31</small></div><div class="d r">成本<small>28</small></div><div class="d y">質量<small>65</small></div></div>
+      <div class="crisis">危機維度：可持續、成本</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P23 · Sai Ying Pun</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">71</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>41</small></div><div class="d g">進度<small>76</small></div><div class="d g">可持續<small>85</small></div><div class="d y">成本<small>63</small></div><div class="d g">質量<small>90</small></div></div>
+      <div class="crisis">危機維度：安全</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P24 · Tsuen Wan</div><div class="dist">長者房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">55</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>53</small></div><div class="d r">進度<small>36</small></div><div class="d r">可持續<small>42</small></div><div class="d y">成本<small>58</small></div><div class="d g">質量<small>85</small></div></div>
+      <div class="crisis">危機維度：安全、進度、可持續</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P25 · Kwun Tong</div><div class="dist">公共房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">68</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>47</small></div><div class="d y">進度<small>56</small></div><div class="d y">可持續<small>56</small></div><div class="d g">成本<small>92</small></div><div class="d g">質量<small>90</small></div></div>
+      <div class="crisis">危機維度：安全</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P26 · Tuen Mun</div><div class="dist">市區重建</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">67</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d g">安全<small>82</small></div><div class="d g">進度<small>84</small></div><div class="d y">可持續<small>63</small></div><div class="d r">成本<small>33</small></div><div class="d y">質量<small>71</small></div></div>
+      <div class="crisis">危機維度：成本</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P27 · Sha Tin</div><div class="dist">資助房屋</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--red)">46</div>
+          <span class="health-pill pill-r">危機</span></div>
+      </div>
+      <div class="dims"><div class="d r">安全<small>26</small></div><div class="d g">進度<small>77</small></div><div class="d y">可持續<small>59</small></div><div class="d r">成本<small>38</small></div><div class="d r">質量<small>30</small></div></div>
+      <div class="crisis">危機維度：安全、成本、質量</div></div><div class="card">
+      <div class="top">
+        <div><div class="code">P28 · Kowloon City</div><div class="dist">組裝合成(MiC)</div></div>
+        <div style="text-align:right"><div class="score" style="color:var(--yellow)">57</div>
+          <span class="health-pill pill-y">關注</span></div>
+      </div>
+      <div class="dims"><div class="d y">安全<small>68</small></div><div class="d r">進度<small>31</small></div><div class="d r">可持續<small>34</small></div><div class="d g">成本<small>91</small></div><div class="d y">質量<small>63</small></div></div>
+      <div class="crisis">危機維度：進度、可持續</div></div></div></div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+<div id="tip"></div>
+
+<footer>本頁數據為演示樣本，用於展示 PPMP 項目健康度、風險管理與表現走勢 · 香港房屋協會 HKHS × Transcendence</footer>
+
+<script>
+/* ---------- 演示數據（樣本，確定性生成） ---------- */
+const DIMS = [
+  {key:"Safety",        zh:"安全", color:"#ff453a"},
+  {key:"Progress",      zh:"進度", color:"#0a84ff"},
+  {key:"Sustainability",zh:"可持續", color:"#30d158"},
+  {key:"Cost",          zh:"成本", color:"#ff9f0a"},
+  {key:"Quality",       zh:"質量", color:"#bf5af2"}
+];
+const DISTRICTS = ["Kwun Tong","Tuen Mun","Sha Tin","Kowloon City","Yuen Long","Tai Po","Kwai Chung","North Point","Cheung Sha Wan","Tseung Kwan O","Sai Ying Pun","Tsuen Wan"];
+const TYPES = ["公共房屋","資助房屋","長者房屋","市區重建","組裝合成(MiC)"];
+const MONTHS = 12;
+const NOW = new Date(2026,7,1); // 2026-08
+const MONTH_LABELS = [];
+for(let m=MONTHS-1;m>=0;m--){ const d=new Date(NOW.getFullYear(), NOW.getMonth()-m,1); MONTH_LABELS.push((d.getMonth()+1)+"月"); }
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rnd = mulberry32(20260827);
+function score(){ return Math.floor(rnd()*65)+30; }
+
+function genHistory(cur, seed){
+  const r = mulberry32(seed);
+  const vals=[];
+  let v = Math.max(20, Math.min(98, cur + (r()-0.5)*30));
+  for(let i=0;i<MONTHS;i++){
+    const t=i/(MONTHS-1);
+    const target=v*(1-t)+cur*t;
+    let val=target+(r()-0.5)*8;
+    val=Math.max(15,Math.min(99,val));
+    vals.push(Math.round(val));
+  }
+  vals[MONTHS-1]=cur;
+  return vals;
+}
+
+const PROJECTS = [];
+for(let i=1;i<=28;i++){
+  const d = DISTRICTS[(i-1)%DISTRICTS.length];
+  const t = TYPES[(i*3)%TYPES.length];
+  const dims = {}, hist={};
+  DIMS.forEach((dm,di)=>{
+    let s=score();
+    if(i%9===0 && dm.key==="Safety") s=Math.floor(rnd()*20)+18;
+    if(i%11===0 && dm.key==="Cost") s=Math.floor(rnd()*20)+20;
+    if(i%7===0 && dm.key==="Progress") s=Math.floor(rnd()*18)+22;
+    dims[dm.key]=s;
+    hist[dm.key]=genHistory(s, i*131+di*17+99);
+  });
+  const overall = Math.round(DIMS.reduce((s,dm)=>s+dims[dm.key],0)/DIMS.length);
+  PROJECTS.push({id:"P"+String(i).padStart(2,"0"), district:d, type:t, dims, hist, overall});
+}
+
+/* ---------- RAG 判定 ---------- */
+function rag(v){ return v>=72 ? "g" : (v>=55 ? "y" : "r"); }
+function ragLabel(v){ return v>=72 ? "健康" : (v>=55 ? "關注" : "危機"); }
+function portfolioRag(p){ return rag(p.overall); }
+const RC = {r:"var(--red)",y:"var(--yellow)",g:"var(--green)"};
+
+/* ---------- 線圖 (純 SVG) ---------- */
+function lineChartSVG(series, labels, opts){
+  opts=opts||{};
+  const W=opts.w||780, H=opts.h||320;
+  const padL=44,padR=18,padT=18,padB=36;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const max=100, min=0;
+  const X=i=> padL + (labels.length===1?0:i/(labels.length-1)*iw);
+  const Y=v=> padT + (1-(v-min)/(max-min))*ih;
+  let g="";
+  // grid + y labels
+  [0,25,50,75,100].forEach(v=>{
+    const y=Y(v);
+    g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e3e3e8" stroke-width="1"/>`;
+    g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#8a8a8e">${v}</text>`;
+  });
+  // x labels
+  labels.forEach((lb,i)=>{
+    if(i%2===0 || i===labels.length-1)
+      g+=`<text x="${X(i)}" y="${H-padB+18}" text-anchor="middle" font-size="11" fill="#8a8a8e">${lb}</text>`;
+  });
+  // lines
+  series.forEach(s=>{
+    const pts=s.data.map((v,i)=>`${X(i)},${Y(v)}`).join(" ");
+    const lw = s.bold?3:2;
+    const dash = s.dash?"stroke-dasharray='6 5'":"";
+    g+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${lw}" ${dash} stroke-linejoin="round"/>`;
+    s.data.forEach((v,i)=>{
+      const big = (i===s.data.length-1);
+      g+=`<circle class="pt" cx="${X(i)}" cy="${Y(v)}" r="${big?4.5:3.2}" fill="${s.color}" `+
+         `data-series="${s.name}" data-month="${labels[i]}" data-val="${v}"></circle>`;
+    });
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${g}</svg>`;
+}
+
+function bindTooltip(containerId){
+  const c=document.getElementById(containerId);
+  const tip=document.getElementById("tip");
+  c.querySelectorAll(".pt").forEach(pt=>{
+    pt.addEventListener("mouseenter",e=>{
+      tip.innerHTML=`<b>${pt.dataset.series}</b><br>${pt.dataset.month} · 得分 ${pt.dataset.val}`;
+      tip.style.display="block";
+    });
+    pt.addEventListener("mousemove",e=>{
+      tip.style.left=(e.clientX+14)+"px";
+      tip.style.top=(e.clientY-10)+"px";
+    });
+    pt.addEventListener("mouseleave",()=>{ tip.style.display="none"; });
+  });
+}
+function renderLineChart(containerId, series, labels){
+  document.getElementById(containerId).innerHTML=lineChartSVG(series,labels);
+  bindTooltip(containerId);
+}
+
+/* ---------- 渲染總覽 ---------- */
+function renderSummary(){
+  const counts={r:0,y:0,g:0};
+  PROJECTS.forEach(p=>counts[portfolioRag(p)]++);
+  const total=PROJECTS.length;
+  const avg=Math.round(PROJECTS.reduce((s,p)=>s+p.overall,0)/total);
+  document.getElementById("kpis").innerHTML=`
+    <div class="kpi total"><div class="n">${total}</div><div class="l">項目總數</div></div>
+    <div class="kpi green"><div class="n">${counts.g}</div><div class="l">健康 (綠)</div></div>
+    <div class="kpi yellow"><div class="n">${counts.y}</div><div class="l">關注 (黃)</div></div>
+    <div class="kpi red"><div class="n">${counts.r}</div><div class="l">危機 (紅)</div></div>
+    <div class="kpi total"><div class="n">${avg}</div><div class="l">平均健康度</div></div>`;
+}
+
+/* 組合走勢：每維度按月平均 */
+function renderPortfolioTrend(){
+  const series = DIMS.map(dm=>{
+    const data=[];
+    for(let m=0;m<MONTHS;m++){
+      let sum=0;
+      PROJECTS.forEach(p=> sum+=p.hist[dm.key][m]);
+      data.push(Math.round(sum/PROJECTS.length));
+    }
+    return {name:dm.zh, color:dm.color, data};
+  });
+  // 整體平均線
+  const overall=[];
+  for(let m=0;m<MONTHS;m++){
+    let sum=0; DIMS.forEach(dm=> PROJECTS.forEach(p=> sum+=p.hist[dm.key][m]));
+    overall.push(Math.round(sum/(PROJECTS.length*DIMS.length)));
+  }
+  series.push({name:"整體平均", color:"#1d1d1f", data:overall, bold:true, dash:true});
+  renderLineChart("portTrend", series, MONTH_LABELS);
+  document.getElementById("portLegend").innerHTML = series.map(s=>
+    `<span><i class="swatch" style="background:${s.color}"></i>${s.name}</span>`).join("");
+}
+
+/* 各維度當前分佈 */
+function renderDist(){
+  let c={r:0,y:0,g:0};
+  PROJECTS.forEach(p=>DIMS.forEach(dm=>c[rag(p.dims[dm.key])]++));
+  const total=c.r+c.y+c.g;
+  document.getElementById("distBar").innerHTML=
+    `<i style="width:${c.g/total*100}%;background:var(--green)"></i>`+
+    `<i style="width:${c.y/total*100}%;background:var(--yellow)"></i>`+
+    `<i style="width:${c.r/total*100}%;background:var(--red)"></i>`;
+  document.getElementById("distMeta").innerHTML=
+    `<span><i class="dot g"></i><b>${c.g}</b> 綠 (健康)</span>`+
+    `<span><i class="dot y"></i><b>${c.y}</b> 黃 (關注)</span>`+
+    `<span><i class="dot r"></i><b>${c.r}</b> 紅 (危機)</span>`;
+}
+
+/* ---------- 網格 ---------- */
+let currentFilter="all";
+function renderGrid(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  PROJECTS.filter(p=>currentFilter==="all"||portfolioRag(p)===currentFilter).forEach(p=>{
+    const r=portfolioRag(p);
+    const crisis=DIMS.filter(dm=>rag(p.dims[dm.key])==="r").map(dm=>dm.zh);
+    const dimsHtml=DIMS.map(dm=>{
+      const v=p.dims[dm.key], rg=rag(v);
+      return `<div class="d ${rg}">${dm.zh}<small>${v}</small></div>`;
+    }).join("");
+    const crisisHtml=crisis.length?`<div class="crisis">危機維度：${crisis.join("、")}</div>`:"";
+    const el=document.createElement("div");
+    el.className="card";
+    el.innerHTML=`
+      <div class="top">
+        <div><div class="code">${p.id} · ${p.district}</div><div class="dist">${p.type}</div></div>
+        <div style="text-align:right"><div class="score" style="color:${RC[r]}">${p.overall}</div>
+          <span class="health-pill pill-${r}">${ragLabel(p.overall)}</span></div>
+      </div>
+      <div class="dims">${dimsHtml}</div>
+      ${crisisHtml}`;
+    el.onclick=()=>openModal(p);
+    grid.appendChild(el);
+  });
+}
+
+/* ---------- 彈窗 + 項目走勢 ---------- */
+const TIPS = {
+  Safety:{r:"立即召開承建商緊急會議；加密現場安全巡查頻率；啟用 SmartEye 智能監控主動識別違規行為。",
+          y:"加強 Toolbox Talk 與安全培訓；設定每月安全 KPI 檢討並上報 PPMP。",
+          g:"維持現有安全文化，將最佳實踐複製至其他項目。"},
+  Progress:{r:"重新檢視關鍵路徑(Critical Path)，制定趕工/復原计划；升級 PPMP 進度預警門檻。",
+           y:"監察關鍵工序偏差，預留緩衝；週會追蹤里程碑達成率。",
+           g:"按計劃推進，保持里程碑透明度。"},
+  Sustainability:{r:"進行碳審計，替換高碳材料；於 PPMP 可持續層設定減碳目標並定期上報。",
+                 y:"優化運輸與廢物管理，跟進碳排放基準線。",
+                 g:"維持低碳表現，申請綠色建築認證。"},
+  Cost:{r:"立即檢視現金流與變更指令(VO)管控；凍結非必要開支，啟動成本控制會議。",
+        y:"監控合約文檔量與預算偏差，建立早期預警機制。",
+        g:"成本受控，持續優化採購與供應鏈。"},
+  Quality:{r:"提高缺陷巡查頻率；啟動整改 SOP 與承建商績效比較。",
+           y:"加強驗收抽檢，追蹤缺陷趨勢與返工率。",
+           g:"質量達標，維持量化質量績效指標。"}
+};
+const RISK_NOTE = {
+  Safety:{r:"安全績效持續下滑，存在致命工傷風險。",y:"安全指標偏弱，需主動預防。"},
+  Progress:{r:"關鍵路徑項目進度延誤，危及交付。",y:"進度偏離計劃，須密切監察。"},
+  Sustainability:{r:"碳排放超標，偏離可持續目標。",y:"可持續表現未達基準。"},
+  Cost:{r:"預算超支與現金流壓力顯著。",y:"成本偏差擴大，需管控。"},
+  Quality:{r:"質量審核低於平均，缺陷風險高。",y:"質量表現偏弱，須加強驗收。"}
+};
+
+function openModal(p){
+  const r=portfolioRag(p);
+  let dimHtml="", tipsList="";
+  DIMS.forEach(dm=>{
+    const v=p.dims[dm.key], rg=rag(v);
+    let note="";
+    if(rg==="r") note=`<div class="note risk">⚠ 風險：${RISK_NOTE[dm.key].r}</div>`;
+    else if(rg==="y") note=`<div class="note risk" style="background:var(--yellow-bg);color:#8a6a00">⚠ 關注：${RISK_NOTE[dm.key].y}</div>`;
+    dimHtml+=`<div class="row">
+        <div class="name">${dm.zh} ${dm.key}</div>
+        <div class="track"><i style="width:${v}%;background:${RC[rg]}"></i></div>
+        <div class="val" style="color:${RC[rg]}">${v}</div>
+      </div>${note}`;
+    tipsList+=`<li><b>${dm.zh}：</b>${TIPS[dm.key][rg]}</li>`;
+  });
+  const series = DIMS.map(dm=>({name:dm.zh, color:dm.color, data:p.hist[dm.key]}));
+  document.getElementById("modal").innerHTML=`
+    <div class="mhead">
+      <div><h2>${p.id} · ${p.district}</h2><div class="mdist">${p.type}　|　五維度健康度詳析</div></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="mhealth">
+      <span class="big" style="color:${RC[r]}">${p.overall}</span>
+      <span class="health-pill pill-${r}">整體${ragLabel(p.overall)}</span>
+    </div>
+    <div class="panel" style="padding:16px 18px;margin-top:6px">
+      <h3 style="font-size:16px">項目表現走勢（近 12 個月）</h3>
+      <div class="chartbox" id="projTrend"></div>
+    </div>
+    <div class="mdim" style="margin-top:18px">${dimHtml}</div>
+    <div class="sech">建議改善方法 / 提示</div>
+    <ul class="tips">${tipsList}</ul>`;
+  document.getElementById("overlay").classList.add("show");
+  renderLineChart("projTrend", series, MONTH_LABELS);
+  const lg=document.getElementById("modal").querySelector(".legend-row");
+  if(!lg){ const d=document.createElement("div"); d.className="legend-row";
+    d.innerHTML=series.map(s=>`<span><i class="swatch" style="background:${s.color}"></i>${s.name}</span>`).join("");
+    document.getElementById("projTrend").after(d);
+  }
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
+document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closeModal(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+
+document.getElementById("filter").addEventListener("click",e=>{
+  if(e.target.tagName!=="BUTTON")return;
+  document.querySelectorAll("#filter button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+  currentFilter=e.target.dataset.f;
+  renderGrid();
+});
+
+/* ---------- init ---------- */
+renderSummary();
+renderPortfolioTrend();
+renderDist();
+renderGrid();
+</script>
+
+
+</body></html>
